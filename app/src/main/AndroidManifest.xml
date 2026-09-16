@@ -39,6 +39,9 @@
             android:exported="true">
             <meta-data android:name="android.telecom.CLASS_EXISTENCE_CHECK"
                 android:value="true" />
+            <!-- Required by RoleManager for the DIALER role -->
+            <meta-data android:name="android.telecom.IN_CALL_SERVICE_UI"
+                android:value="true" />
             <intent-filter>
                 <action android:name="android.telecom.InCallService"/>
             </intent-filter>
