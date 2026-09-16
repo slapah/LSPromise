@@ -25,7 +25,8 @@ jobs:
           echo "ANDROID_SDK_ROOT=$HOME/android-sdk" >> "$GITHUB_ENV"
           SDKM="$HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager"
           yes | "$SDKM" --licenses >/dev/null 2>&1 || true
-          "$SDKM" "platforms;android-37" "platform-tools" >/dev/null
+          echo "--- available platform packages ---"
+          "$SDKM" --list | grep -E "platforms;|build-tools;" | head -25
 
       - name: Build APK
         run: ./gradlew assembleRelease --no-daemon --stacktrace
