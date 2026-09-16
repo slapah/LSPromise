@@ -17,8 +17,10 @@ jobs:
 
       - name: Ensure Android SDK platform 37
         run: |
-          yes | sdkmanager --licenses >/dev/null 2>&1 || true
-          sdkmanager "platforms;android-37" >/dev/null
+          SDKM="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          [ -x "$SDKM" ] || SDKM="$(find "$ANDROID_HOME/cmdline-tools" -name sdkmanager -type f | head -1)"
+          yes | "$SDKM" --licenses >/dev/null 2>&1 || true
+          "$SDKM" "platforms;android-37" >/dev/null
 
       - name: Build APK
         run: ./gradlew assembleRelease --no-daemon --stacktrace
