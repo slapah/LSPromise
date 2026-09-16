@@ -165,13 +165,15 @@ public class MainActivity extends Activity implements View.OnClickListener {
 
     private void copyKsud() {
         try {
-            // h8q: prefer our instrumented root helper (marks every step of the
-            // post-permissive handoff to a shell-readable log), then the
-            // polygraphene ksud, then the KernelSU manager's libksud.so.
-            var helper = new File("/data/local/tmp/cve-2026-43499-root");
+            // The kernel stage execs this file as `ksud late-load`, so it MUST
+            // be a real ksud. Prefer the gate-patched polygraphene ksud staged
+            // for h8q, then fall back to the KernelSU manager's own libksud.so.
+            // NOTE: do NOT use /data/local/tmp/cve-2026-43499-root here — that
+            // is the GhostLock roothelper wrapper (a vendor_modprobe-context
+            // late-loader), not a drop-in ksud; running it as `ksud late-load`
+            // silently fails to load KernelSU and the manager stays unrooted.
             var explicit = new File("/data/local/tmp/ksud-h8q");
-            var src = helper.isFile() ? helper.toPath()
-                    : explicit.isFile() ? explicit.toPath()
+            var src = explicit.isFile() ? explicit.toPath()
                     : new File(getPackageManager()
                     .getApplicationInfo("me.weishu.kernelsu", 0)
                     .nativeLibraryDir, "libksud.so").toPath();
