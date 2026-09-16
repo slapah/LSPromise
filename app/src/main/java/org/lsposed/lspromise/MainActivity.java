@@ -165,10 +165,13 @@ public class MainActivity extends Activity implements View.OnClickListener {
 
     private void copyKsud() {
         try {
-            // h8q: prefer our polygraphene ksud (6.12-fixed kernelsu.ko) staged
-            // by the shell; fall back to extracting from the KernelSU manager.
+            // h8q: prefer our instrumented root helper (marks every step of the
+            // post-permissive handoff to a shell-readable log), then the
+            // polygraphene ksud, then the KernelSU manager's libksud.so.
+            var helper = new File("/data/local/tmp/cve-2026-43499-root");
             var explicit = new File("/data/local/tmp/ksud-h8q");
-            var src = explicit.isFile() ? explicit.toPath()
+            var src = helper.isFile() ? helper.toPath()
+                    : explicit.isFile() ? explicit.toPath()
                     : new File(getPackageManager()
                     .getApplicationInfo("me.weishu.kernelsu", 0)
                     .nativeLibraryDir, "libksud.so").toPath();
