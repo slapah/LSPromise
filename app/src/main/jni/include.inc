@@ -161,6 +161,11 @@
   .equ SYS_init_module,    105
   .equ SYS_lseek,           62
   .equ SYS_readlinkat,      78
+  .equ SYS_mount,           40
+  .equ SYS_unshare,         97
+  .equ MS_BIND,        0x01000
+  .equ MS_REC,         0x04000
+  .equ MS_PRIVATE,     0x40000
 
   .equ EAGAIN,              11
   .equ SEEK_DATA,            3
