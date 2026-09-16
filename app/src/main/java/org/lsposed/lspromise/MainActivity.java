@@ -165,9 +165,13 @@ public class MainActivity extends Activity implements View.OnClickListener {
 
     private void copyKsud() {
         try {
-            var app = getPackageManager().getApplicationInfo("me.weishu.kernelsu", 0);
-            var f = new File(app.nativeLibraryDir, "libksud.so");
-            var src = f.toPath();
+            // h8q: prefer our polygraphene ksud (6.12-fixed kernelsu.ko) staged
+            // by the shell; fall back to extracting from the KernelSU manager.
+            var explicit = new File("/data/local/tmp/ksud-h8q");
+            var src = explicit.isFile() ? explicit.toPath()
+                    : new File(getPackageManager()
+                    .getApplicationInfo("me.weishu.kernelsu", 0)
+                    .nativeLibraryDir, "libksud.so").toPath();
             var dst = new File(getFilesDir().getParent(), "ksud").toPath();
             tv.append("copy " + src + " -> " + dst + "\n");
             Files.copy(src, dst, StandardCopyOption.REPLACE_EXISTING);
