@@ -642,7 +642,7 @@ int patch_ko(struct Reporter *reporter) {
 
     LOGD("patching vendorfile");
     REPORTLN("* patching #2");
-    ret = patch_file("[vendorfile]", dirtyfrag_ko_start , len, 0, 0xdead0000, 1, reporter);
+    ret = patch_file("/vendor/lib64/libstagefright_aidl_bufferpool2.so", dirtyfrag_ko_start , len, 0, 0xdead0000, 1, reporter);
         // patch_file("", buf, sizeof(buf), 0, 0xdead0000, 1);
 
     LOGD("patch2 ret %d", ret);
