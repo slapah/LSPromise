@@ -20,6 +20,19 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- Samsung Telecom narrows the InCallService query to the default
+                 dialer's package (getSamsungDefaultDialerCache), so the CVE only
+                 fires if this app IS the default dialer; DIAL filters make the
+                 DIALER role grantable. -->
+            <intent-filter>
+                <action android:name="android.intent.action.DIAL" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.DIAL" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="tel" />
+            </intent-filter>
         </activity>
         <service android:name=".MyInCallService"
             android:permission="android.permission.BIND_INCALL_SERVICE"
