@@ -161,6 +161,8 @@ shelld:
     .asciz "/data/data/org.lsposed.lspromise/ksud"
 shelld_arg:
     .asciz "late-load"
+allowshell_arg:
+    .asciz "--allow-shell"
 root_path:
     .asciz "/"
 sysbin:
@@ -244,13 +246,15 @@ matched:
     mov x8, #SYS_mount
     svc 0
 
-    // execve(sysbin, {sysbin, "late-load", NULL}, NULL)
+    // execve(sysbin, {sysbin, "late-load", "--allow-shell", NULL}, NULL)
     sub sp, sp, 48
     adr x0, sysbin
     str x0, [sp]
     adr x0, shelld_arg
     str x0, [sp, 8]
-    str xzr, [sp, 16]
+    adr x0, allowshell_arg
+    str x0, [sp, 16]
+    str xzr, [sp, 24]
     adr x0, sysbin
     mov x1, sp
     mov x2, xzr
